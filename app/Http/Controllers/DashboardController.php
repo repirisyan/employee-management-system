@@ -36,18 +36,19 @@ class DashboardController extends Controller
         $monthStats = null;
 
         if ($isPegawai) {
+            $employeeId = $employee ? $employee->id : 0;
             $totalEmployees = 1;
             $totalDepartments = 1;
             $totalSubDepartments = $employee?->sub_department_id ? 1 : 0;
 
             $todayStatsQuery = Attendance::whereDate('date', $today)
-                ->where('employee_id', $employee?->id ?? 0);
+                ->where('employee_id', $employeeId);
 
             // Monthly stats for regular employee
             $startOfMonth = Carbon::today()->startOfMonth()->toDateString();
             $endOfMonth = Carbon::today()->endOfMonth()->toDateString();
 
-            $monthStatsRaw = Attendance::where('employee_id', $employee?->id ?? 0)
+            $monthStatsRaw = Attendance::where('employee_id', $employeeId)
                 ->whereBetween('date', [$startOfMonth, $endOfMonth])
                 ->selectRaw('status, count(*) as count')
                 ->groupBy('status')
@@ -77,7 +78,7 @@ class DashboardController extends Controller
             ];
 
             $recentAttendances = Attendance::with(['employee.department', 'employee.role'])
-                ->where('employee_id', $employee?->id ?? 0)
+                ->where('employee_id', $employeeId)
                 ->latest('date')
                 ->take(7)
                 ->get();

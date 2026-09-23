@@ -64,6 +64,7 @@ class AttendanceController extends Controller
         $user = $request->user();
         $adminDeptId = $user ? $user->getAdminDepartmentId() : null;
         $employee = $user ? $user->getEmployeeRecord() : null;
+        $employeeId = $employee ? $employee->id : 0;
         $isPegawai = $user && $user->isPegawai();
 
         $startDate = $request->query('start_date', $request->query('date', Carbon::today()->toDateString()));
@@ -85,7 +86,7 @@ class AttendanceController extends Controller
         $rawStatuses = $request->query('statuses', $request->query('status', []));
         $statuses = $this->parseMultiStrings($rawStatuses);
 
-        $search = $request->query('search');
+        $search = is_string($request->query('search')) ? trim($request->query('search')) : null;
         $sort = $request->query('sort');
         $direction = strtolower((string) $request->query('direction', 'asc')) === 'desc' ? 'desc' : 'asc';
 
@@ -100,7 +101,7 @@ class AttendanceController extends Controller
             ->when($endDate, fn ($q) => $q->whereDate('date', '<=', $endDate));
 
         if ($isPegawai) {
-            $query->where('employee_id', $employee?->id ?? 0);
+            $query->where('employee_id', $employeeId);
         } else {
             $query
                 ->when(! empty($departmentIds), function ($query) use ($departmentIds) {
@@ -109,7 +110,7 @@ class AttendanceController extends Controller
                 ->when(! empty($subDepartmentIds), function ($query) use ($subDepartmentIds) {
                     $query->whereHas('employee', fn ($q) => $q->whereIn('sub_department_id', $subDepartmentIds));
                 })
-                ->when($search, function ($query, $search) {
+                ->when($search, function ($query, string $search) {
                     $query->whereHas('employee', function ($q) use ($search) {
                         $q->where('name', 'like', "%{$search}%")
                             ->orWhere('nip', 'like', "%{$search}%");
@@ -160,7 +161,7 @@ class AttendanceController extends Controller
             $dailyStatsQuery = Attendance::query()
                 ->when($startDate, fn ($q) => $q->whereDate('date', '>=', $startDate))
                 ->when($endDate, fn ($q) => $q->whereDate('date', '<=', $endDate))
-                ->where('employee_id', $employee?->id ?? 0);
+                ->where('employee_id', $employeeId);
         } else {
             $totalEmployees = $adminDeptId
                 ? Employee::where('status', 'active')->where('department_id', $adminDeptId)->count()
@@ -253,7 +254,7 @@ class AttendanceController extends Controller
         $validated = $request->validated();
 
         if ($adminDeptId) {
-            $targetEmployee = Employee::find($validated['employee_id']);
+            $targetEmployee = Employee::where('id', $validated['employee_id'])->first();
             if (! $targetEmployee || $targetEmployee->department_id !== $adminDeptId) {
                 abort(403, 'Anda hanya dapat mengelola data kehadiran pegawai dari bagian Anda.');
             }
@@ -261,9 +262,9 @@ class AttendanceController extends Controller
 
         $id = $request->input('id') ?? $request->input('attendance_id');
         if ($id) {
-            $existing = Attendance::find($id);
+            $existing = Attendance::with('employee')->where('id', $id)->first();
             if ($existing) {
-                if ($adminDeptId && $existing->employee->department_id !== $adminDeptId) {
+                if ($adminDeptId && $existing->employee?->department_id !== $adminDeptId) {
                     abort(403, 'Anda hanya dapat mengelola data kehadiran pegawai dari bagian Anda.');
                 }
 
@@ -328,10 +329,10 @@ class AttendanceController extends Controller
         $validated = $request->validated();
 
         if ($adminDeptId) {
-            if ($attendance->employee->department_id !== $adminDeptId) {
+            if ($attendance->employee?->department_id !== $adminDeptId) {
                 abort(403, 'Anda hanya dapat mengelola data kehadiran pegawai dari bagian Anda.');
             }
-            $targetEmployee = Employee::find($validated['employee_id']);
+            $targetEmployee = Employee::where('id', $validated['employee_id'])->first();
             if (! $targetEmployee || $targetEmployee->department_id !== $adminDeptId) {
                 abort(403, 'Anda hanya dapat mengelola data kehadiran pegawai dari bagian Anda.');
             }

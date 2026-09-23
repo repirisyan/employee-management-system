@@ -13,14 +13,17 @@ class ImageService
      */
     public function convertToWebp(UploadedFile $file, string $directory = 'avatars', int $quality = 85): string
     {
-        $imageContent = file_get_contents($file->getRealPath());
-        $image = @imagecreatefromstring($imageContent);
+        $realPath = $file->getRealPath();
+        $imageContent = $realPath !== false ? @file_get_contents($realPath) : false;
+        $image = $imageContent !== false ? @imagecreatefromstring($imageContent) : false;
 
         $filename = $directory.'/'.Str::uuid().'.webp';
 
         if ($image === false) {
             // Fallback if imagecreatefromstring cannot decode (e.g. SVG or raw WebP)
-            return $file->store($directory, 'public');
+            $stored = $file->store($directory, 'public');
+
+            return $stored !== false ? $stored : '';
         }
 
         // Preserve alpha transparency for PNGs and transparent images

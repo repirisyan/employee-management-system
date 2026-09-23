@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Department;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -18,7 +19,8 @@ class DepartmentRequest extends FormRequest
      */
     public function rules(): array
     {
-        $departmentId = $this->route('department')?->id ?? $this->route('department');
+        $department = $this->route('department');
+        $departmentId = $department instanceof Department ? $department->id : $department;
 
         return [
             'name' => ['required', 'string', 'max:255'],

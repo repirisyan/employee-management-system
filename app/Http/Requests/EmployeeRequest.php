@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Employee;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -18,7 +19,8 @@ class EmployeeRequest extends FormRequest
      */
     public function rules(): array
     {
-        $employeeId = $this->route('employee')?->id ?? $this->route('employee');
+        $employee = $this->route('employee');
+        $employeeId = $employee instanceof Employee ? $employee->id : $employee;
 
         return [
             'nip' => [

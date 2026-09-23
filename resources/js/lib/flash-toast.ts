@@ -71,4 +71,3 @@ export const notify = {
     error: (message: string, description?: string) =>
         toast.error(message, description ? { description } : undefined),
 };
-

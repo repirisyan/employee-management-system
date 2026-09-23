@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Role;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -18,7 +19,8 @@ class RoleRequest extends FormRequest
      */
     public function rules(): array
     {
-        $roleId = $this->route('role')?->id ?? $this->route('role');
+        $role = $this->route('role');
+        $roleId = $role instanceof Role ? $role->id : $role;
 
         return [
             'name' => ['required', 'string', 'max:255'],

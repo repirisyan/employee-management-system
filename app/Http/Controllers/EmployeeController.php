@@ -71,7 +71,7 @@ class EmployeeController extends Controller
 
         $adminDeptId = $user->getAdminDepartmentId();
 
-        $search = $request->query('search');
+        $search = is_string($request->query('search')) ? trim($request->query('search')) : null;
 
         $rawDepartmentIds = $request->query('department_ids', $request->query('department_id', []));
         $departmentIds = $this->parseMultiIds($rawDepartmentIds);
@@ -93,7 +93,7 @@ class EmployeeController extends Controller
 
         $query = Employee::query()
             ->with(['department:id,name,code', 'subDepartment:id,name,code', 'role:id,name', 'user:id,name,email'])
-            ->when($search, function ($query, $search) {
+            ->when($search, function ($query, string $search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('nip', 'like', "%{$search}%")
                         ->orWhere('name', 'like', "%{$search}%")
@@ -191,7 +191,7 @@ class EmployeeController extends Controller
                 abort(403, 'Anda hanya dapat menambahkan pegawai untuk bagian Anda.');
             }
             if (! empty($validated['sub_department_id'])) {
-                $sub = SubDepartment::find($validated['sub_department_id']);
+                $sub = SubDepartment::where('id', $validated['sub_department_id'])->first();
                 if ($sub && $sub->department_id !== $adminDeptId) {
                     abort(403, 'Sub Bagian tidak valid untuk bagian Anda.');
                 }

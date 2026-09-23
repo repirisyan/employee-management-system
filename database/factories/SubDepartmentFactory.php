@@ -20,7 +20,7 @@ class SubDepartmentFactory extends Factory
     {
         return [
             'department_id' => Department::factory(),
-            'name' => ucfirst(fake()->words(2, true)),
+            'name' => ucfirst(fake()->word().' '.fake()->word()),
             'code' => strtoupper(fake()->lexify('???')),
             'description' => fake()->sentence(),
         ];

@@ -40,7 +40,7 @@ class SubDepartmentController extends Controller
      */
     public function index(Request $request): Response
     {
-        $search = $request->query('search');
+        $search = is_string($request->query('search')) ? trim($request->query('search')) : null;
         $rawDepartmentIds = $request->query('department_ids', $request->query('department_id', []));
         $departmentIds = $this->parseMultiIds($rawDepartmentIds);
         $sort = $request->query('sort');
@@ -52,7 +52,7 @@ class SubDepartmentController extends Controller
             ->when(count($departmentIds) > 0, function ($query) use ($departmentIds) {
                 $query->whereIn('department_id', $departmentIds);
             })
-            ->when($search, function ($query, $search) {
+            ->when($search, function ($query, string $search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
                         ->orWhere('code', 'like', "%{$search}%")

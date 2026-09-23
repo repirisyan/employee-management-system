@@ -32,7 +32,19 @@ jobs:
           node-version: '22'
 
       - name: Setup Application
-        run: composer setup
+        run: |
+          touch database/database.sqlite
+          php -r "file_exists('.env') || copy('.env.example', '.env');"
+          php -r "file_put_contents('.env', preg_replace('/DB_CONNECTION=mysql/', 'DB_CONNECTION=sqlite', file_get_contents('.env')));"
+          php -r "file_put_contents('.env', preg_replace('/DB_DATABASE=employee_management/', 'DB_DATABASE=database\/database.sqlite', file_get_contents('.env')));"
+          composer setup
+        env:
+          DB_CONNECTION: sqlite
+          DB_DATABASE: database/database.sqlite
 
       - name: Run CI Checks
         run: composer ci:check
+        env:
+          DB_CONNECTION: sqlite
+          DB_DATABASE: database/database.sqlite
+

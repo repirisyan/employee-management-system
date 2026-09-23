@@ -16,7 +16,7 @@ class RoleController extends Controller
      */
     public function index(Request $request): Response
     {
-        $search = $request->query('search');
+        $search = is_string($request->query('search')) ? trim($request->query('search')) : null;
 
         $perPage = (int) $request->input('per_page', 10);
         if ($perPage < 5 || $perPage > 100) {
@@ -25,7 +25,7 @@ class RoleController extends Controller
 
         $roles = Role::query()
             ->withCount('employees')
-            ->when($search, function ($query, $search) {
+            ->when($search, function ($query, string $search) {
                 $query->where('name', 'like', "%{$search}%")
                     ->orWhere('slug', 'like', "%{$search}%")
                     ->orWhere('description', 'like', "%{$search}%");

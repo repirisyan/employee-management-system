@@ -16,13 +16,13 @@ class DepartmentController extends Controller
      */
     public function index(Request $request): Response
     {
-        $search = $request->query('search');
+        $search = is_string($request->query('search')) ? trim($request->query('search')) : null;
         $sort = $request->query('sort');
         $direction = strtolower((string) $request->query('direction', 'asc')) === 'desc' ? 'desc' : 'asc';
 
         $query = Department::query()
             ->withCount(['subDepartments', 'employees'])
-            ->when($search, function ($query, $search) {
+            ->when($search, function ($query, string $search) {
                 $query->where('name', 'like', "%{$search}%")
                     ->orWhere('code', 'like', "%{$search}%")
                     ->orWhere('description', 'like', "%{$search}%");
